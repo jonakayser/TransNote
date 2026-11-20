@@ -1,6 +1,6 @@
 # TransNote — Vision
 
-> **Status:** draft for discussion (v0.1). Open questions are marked **❓**.
+> **Status:** draft for discussion (v0.2). Open questions are marked **❓**.
 
 ## 1. The problem
 
@@ -22,8 +22,19 @@ The result should preserve everything that matters musically:
 - bar lines, repeats, and voltas where possible
 - multiple pages combined into one score
 
-Transposition then happens either in MuseScore or directly in TransNote
-(see §6).
+### Typical input (decided)
+
+- **Printed** sheet music (no handwriting)
+- **Single-line melodies**, one staff, mostly **B♭ trumpet parts**
+- Usual target: **E♭ alto sax**
+
+### Transposition happens in MuseScore (decided)
+
+TransNote does not transpose. But it should **tag the part as a B♭ trumpet**
+(the MusicXML `<transpose>` element: diatonic −1, chromatic −2). Without that,
+MuseScore treats the notes on the page as concert pitch. Then "Change
+instrument → Alto Saxophone" comes out a major 2nd off. With the tag, changing
+the instrument gives the correct alto part (written trumpet + perfect 5th).
 
 ## 3. Guiding principles
 
@@ -60,7 +71,7 @@ Transposition then happens either in MuseScore or directly in TransNote
         │ 4. Merge & check      │  join pages, check bar lengths, key,
         │    (music21)          │  clefs; mark doubtful bars
         ├───────────────────────┤
-        │ 5. Transpose (opt.)   │  by interval or to a target key
+        │ 5. Tag instrument     │  mark as B♭ trumpet (MuseScore transposes)
         ├───────────────────────┤
         │ 6. Export             │  .mxl → open in MuseScore Studio
         └───────────────────────┘
@@ -83,35 +94,55 @@ of step 2 for free and is the recommended way to capture in phase 1.
 | [Audiveris](https://github.com/Audiveris/audiveris) | Java (Mac .dmg, CLI batch mode) | Mature, actively maintained, very good on **clean printed scans**, rich MusicXML | Struggles with photos (perspective, shadows); separate Java install |
 | Vision LLM (e.g. Claude) | API | Can read a page "like a musician": good for key/time-signature checks or second opinions on single bars | Not reliable for full note-by-note transcription; costs money; needs internet |
 
-**Plan:** wrap engines behind one interface, start with **homr** (photos) and
-**Audiveris** (scans), compare both on the test set, and pick per input type,
-or run both and keep the one with fewer flagged bars.
+**Both have a command-line interface**, so either fits an automated workflow:
+
+```bash
+# Audiveris (no GUI, export MusicXML)
+/Applications/Audiveris.app/Contents/MacOS/Audiveris -batch -export -output out/ -- page.pdf
+# homr (writes page.musicxml next to the image)
+homr page.jpg
+```
+
+- **Audiveris** reads PDFs and multi-page books natively. It's a separate
+  Java app (signed .dmg not provided, so Gatekeeper needs a one-time override).
+- **homr** is a Python package, so it lives in the same environment as
+  TransNote. It takes images only (PDF pages must be rendered first), one page
+  per run. It ignores dynamics and articulations.
+
+**Plan:** wrap both behind one interface and pick the winner with the
+benchmark below. Keep the loser available as a fallback.
+
+### Engine benchmark (phase 0)
+
+1. Collect **5–10 real pages** from my trumpet parts, in two versions each:
+   phone **photo** and Apple **"Scan Documents" PDF**.
+2. Make **ground truth**: run either engine, fix the result by hand in
+   MuseScore, export MusicXML.
+3. `transnote compare samples/` runs every engine on every page and scores the
+   output against ground truth with `music21`:
+   - note accuracy (pitch + duration, aligned per measure)
+   - rests, ties, key and time signature correct?
+   - bars whose durations don't fit the time signature
+   - run time
+4. Result: a table showing which engine wins for photos vs. scans.
 
 ## 5. Phases
 
 | Phase | What I get |
 |---|---|
-| **0 — Setup** | Python project (`uv`), command-line skeleton, engines installed on the Mac, 5–10 test pages with ground truth |
+| **0 — Setup & benchmark** | Python project (`uv`), both engines installed on the Mac, 5–10 test pages with ground truth, `transnote compare` picks the engine |
 | **1 — MVP** | `transnote scan page.jpg --open` → MusicXML opens in MuseScore. One page, one engine |
 | **2 — Quality** | Preprocessing, multi-page merge, bar-length checks with doubtful bars marked in the score, engine comparison |
-| **3 — Transpose** | `--transpose +M2` / `--to-key Bb` / instrument presets (e.g. "for B♭ clarinet") |
+| **3 — Instrument tag** | `--instrument bb-trumpet` writes the transposition into the MusicXML so MuseScore's "Change instrument" is correct |
 | **4 — Comfort** | Drop photos into a watched folder (e.g. iCloud Drive), or a small drag-and-drop window on the Mac |
 | **5 — Mobile (maybe)** | iPad app via TestFlight that captures pages and sends them to the Mac, or runs OMR on-device |
 
 ## 6. Open questions ❓
 
-1. **What music?** Single-line melodies (lead sheets, wind/brass parts), piano
-   (two staves, chords), choir (lyrics), or all of these? Polyphony and lyrics
-   make OMR much harder, so this sets the priorities.
-2. **Printed only, or handwritten too?** (Handwritten is far less reliable with
-   today's engines.)
-3. **Why transpose?** For a transposing instrument (B♭/E♭/F), for a singer's
-   range, or both? Should TransNote transpose, or just hand over to MuseScore,
-   which already transposes well?
-4. **Chord symbols / lyrics / dynamics:** needed, or are notes and rhythm enough?
-5. **Interface:** is a terminal command fine, or do I want a window / drag-and-drop
-   from the start?
-6. **Which Mac?** Apple Silicon is assumed (fast enough for homr on CPU/MPS).
+1. **Chord symbols / dynamics / articulations:** needed, or are notes and
+   rhythm enough? (homr ignores dynamics and articulations.)
+2. **Interface:** a terminal command is enough to start. A window can come later.
+3. **Which Mac?** Apple Silicon is assumed (fast enough for homr on CPU/MPS).
 
 ## 7. Out of scope (for now)
 
