@@ -1,6 +1,6 @@
 # TransNote — Vision
 
-> **Status:** draft for discussion (v0.2). Open questions are marked **❓**.
+> **Status:** v0.3. Phase 0 tooling is built; waiting for real sample pages. Open questions are marked **❓**.
 
 ## 1. The problem
 
@@ -128,14 +128,32 @@ benchmark below. Keep the loser available as a fallback.
 
 ## 5. Phases
 
-| Phase | What I get |
-|---|---|
-| **0 — Setup & benchmark** | Python project (`uv`), both engines installed on the Mac, 5–10 test pages with ground truth, `transnote compare` picks the engine |
-| **1 — MVP** | `transnote scan page.jpg --open` → MusicXML opens in MuseScore. One page, one engine |
-| **2 — Quality** | Preprocessing, multi-page merge, bar-length checks with doubtful bars marked in the score, engine comparison |
-| **3 — Instrument tag** | `--instrument bb-trumpet` writes the transposition into the MusicXML so MuseScore's "Change instrument" is correct |
+| Phase | What I get | Status |
+|---|---|---|
+| **0 — Setup & benchmark** | Python project (`uv`), setup scripts for Mac and cloud, `transnote compare`, 5–10 real test pages with ground truth | Tooling done; real pages missing |
+| **1 — MVP** | `transnote scan page.jpg --open` → MusicXML opens in MuseScore | Done (both engines, multi-page) |
+| **2 — Quality** | Preprocessing, doubtful bars *marked in the score*, cross-checking the two engines against each other | Bar check prints doubtful bars |
+| **3 — Instrument tag** | `--instrument bb-trumpet` writes the transposition into the MusicXML so MuseScore's "Change instrument" is correct | Done (default) |
 | **4 — Comfort** | Drop photos into a watched folder (e.g. iCloud Drive), or a small drag-and-drop window on the Mac |
 | **5 — Mobile (maybe)** | iPad app via TestFlight that captures pages and sends them to the Mac, or runs OMR on-device |
+
+### First results (synthetic pages only)
+
+Two made-up melodies, engraved with LilyPond (`scripts/make_synthetic_samples.py`),
+each as a clean 300 dpi "scan" and a fake phone photo (perspective, shadow, blur):
+
+| Engine | Notes+rests | Pitch | Rhythm | Time per page |
+|---|---|---|---|---|
+| homr | 100 % | 100 % | 100 % | ~5 s |
+| Audiveris | 95 % | 97 % | 96 % | ~7 s |
+
+Audiveris dropped one whole bar of the waltz (on both scan and photo). The bar
+check did **not** catch this, because the remaining bars were all complete. A
+missing bar can only be found by comparing with something else, e.g. the other
+engine's result. That's an idea for phase 2.
+
+These pages are much cleaner than real printed parts, so this proves the
+pipeline works but does **not** pick the winner yet.
 
 ## 6. Open questions ❓
 
