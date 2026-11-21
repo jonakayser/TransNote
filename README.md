@@ -39,6 +39,22 @@ before each download, and finishes with `transnote doctor`.
 Mac, *File → Insert from iPhone → Scan Documents*). It straightens and crops the
 page, and the PDF lands on the Mac.
 
+### The app
+
+`./scripts/make-mac-app.sh` (also run by the setup script) builds
+**`~/Applications/TransNote.app`**. Open it with Spotlight (⌘-Space, "TransNote"):
+
+1. Pick the image(s) of one piece (⌘-click for several pages).
+2. Pick where to save. By default this is the images' folder, with a name taken from
+   the images (`Image.jpeg` + `Image 2.jpeg` → `Image.musicxml`).
+3. Wait while it recognises the pages, then click **Open in MuseScore**.
+
+You can also drag the app into the Dock and drop images onto it. Pages are put in
+natural order (`Image`, `Image 2`, … `Image 10`), and the final dialog lists that order.
+The app uses homr and marks the part as Trumpet in B♭.
+
+### Command line
+
 ```bash
 transnote scan trumpet-part.pdf --open
 ```
@@ -53,6 +69,7 @@ transnote scan page-1.jpg page-2.jpg -e audiveris -o song.musicxml   # two photo
 transnote scan page.jpg -i none                                      # don't mark an instrument
 transnote check song.musicxml                                        # key, time, doubtful bars
 transnote tag song.musicxml -i bb-trumpet                            # mark an existing file
+transnote plan *.jpeg                                                # page order + suggested name
 transnote doctor                                                     # what's installed?
 ```
 

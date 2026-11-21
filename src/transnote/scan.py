@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -29,11 +30,32 @@ class ScanResult:
     measures: int
 
 
+_PAGE_NUMBER = re.compile(r"^(?P<base>.*?)[\s_\-.]*\(?(?P<num>\d+)\)?$")
+
+
+def _split_page(stem: str) -> tuple[str, int]:
+    """'Image 2' → ('Image', 2), 'page-03' → ('page', 3), 'Image' → ('Image', 0)."""
+    m = _PAGE_NUMBER.match(stem)
+    if m and m.group("base"):
+        return m.group("base"), int(m.group("num"))
+    return stem, 0
+
+
+def order_pages(inputs: Sequence[Path]) -> list[Path]:
+    """Sort pages naturally: Image.jpeg, Image 2.jpeg, … 10 after 9, not after 1."""
+    def key(p: Path):
+        base, num = _split_page(p.stem)
+        return base.casefold(), num, p.name.casefold()
+    return sorted((Path(p) for p in inputs), key=key)
+
+
 def default_output(inputs: Sequence[Path]) -> Path:
     first = Path(inputs[0])
     stem = first.stem
-    if len(inputs) > 1 and stem.rsplit("-", 1)[-1].isdigit():
-        stem = stem.rsplit("-", 1)[0]  # page-1.jpg, page-2.jpg → page.musicxml
+    if len(inputs) > 1:
+        bases = {_split_page(Path(p).stem)[0].casefold() for p in inputs}
+        if len(bases) == 1:
+            stem = _split_page(stem)[0]  # page-1.jpg, page-2.jpg → page.musicxml
     return first.with_name(f"{stem}.musicxml")
 
 

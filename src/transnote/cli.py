@@ -1,4 +1,4 @@
-"""Command-line interface: ``transnote scan | compare | evaluate | check | tag | doctor``."""
+"""Command-line interface: ``transnote scan | plan | compare | evaluate | check | tag | doctor``."""
 
 from __future__ import annotations
 
@@ -44,6 +44,17 @@ def cmd_scan(args) -> int:
         print("  ✓ All bars add up to the time signature.")
     if args.open:
         open_in_musescore(result.output)
+    return 0
+
+
+def cmd_plan(args) -> int:
+    """Used by the Mac app: print the suggested output file, then the pages in order."""
+    from .scan import default_output, order_pages
+
+    pages = order_pages(args.inputs)
+    print(default_output(pages))
+    for page in pages:
+        print(page)
     return 0
 
 
@@ -138,6 +149,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--open", action="store_true", help="Open the result in MuseScore Studio")
     s.add_argument("--keep-work", type=Path, metavar="DIR", help="Keep the engine's intermediate files here")
     s.set_defaults(func=cmd_scan)
+
+    pl = sub.add_parser("plan", help="Print the suggested output file and the pages in natural order")
+    pl.add_argument("inputs", nargs="+", type=Path)
+    pl.set_defaults(func=cmd_plan)
 
     c = sub.add_parser("compare", help="Benchmark the engines on the sample pages")
     c.add_argument("samples", nargs="?", type=Path, default=Path("samples"))

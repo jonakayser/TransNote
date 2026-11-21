@@ -81,3 +81,17 @@ def test_cli_scan_with_fake_homr(tmp_path, fake_tool, melody, monkeypatch, capsy
     text = capsys.readouterr().out
     assert "song.musicxml" in text and "All bars add up" in text
     assert "Trumpet in B♭" in (tmp_path / "song.musicxml").read_text()
+
+
+def test_page_order_and_default_name(capsys):
+    from transnote.scan import default_output, order_pages
+
+    pages = [Path("/m/Image 2.jpeg"), Path("/m/Image 10.jpeg"), Path("/m/Image.jpeg")]
+    assert [p.name for p in order_pages(pages)] == ["Image.jpeg", "Image 2.jpeg", "Image 10.jpeg"]
+    assert default_output(order_pages(pages)) == Path("/m/Image.musicxml")
+    assert default_output([Path("/m/page-1.jpg"), Path("/m/page-2.jpg")]) == Path("/m/page.musicxml")
+    assert default_output([Path("/m/IMG_4501.jpg")]) == Path("/m/IMG_4501.musicxml")
+    assert default_output([Path("/m/march.jpg"), Path("/m/waltz.jpg")]) == Path("/m/march.musicxml")
+
+    assert main(["plan", "/m/scan_2.png", "/m/scan_1.png"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["/m/scan.musicxml", "/m/scan_1.png", "/m/scan_2.png"]

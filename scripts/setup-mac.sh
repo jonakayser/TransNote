@@ -5,6 +5,7 @@
 #   ./scripts/setup-mac.sh --yes    # no questions
 #
 # Installs: uv, TransNote (command `transnote`), homr (+ its models), Audiveris.
+# Also builds ~/Applications/TransNote.app.
 # Optional: LilyPond (only needed to generate synthetic test pages).
 # Safe to run again: it skips what is already there.
 #
@@ -112,7 +113,10 @@ else
     warn "LilyPond not installed (optional)"
 fi
 
+bold "App"
+"$REPO_DIR/scripts/make-mac-app.sh" || warn "Could not build TransNote.app (try ./scripts/make-mac-app.sh)"
+
 bold "Check"
 transnote doctor || "$HOME/.local/bin/transnote" doctor || true
 echo
-echo "Done. Try:  transnote scan my-page.jpg --open"
+echo "Done. Open TransNote from Spotlight (⌘-Space, \"TransNote\"), or:  transnote scan my-page.jpg --open"
